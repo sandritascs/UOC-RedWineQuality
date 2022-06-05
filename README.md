@@ -30,3 +30,4 @@ En el siguiente enlace se encuentra el vídeo de explicación de la práctica:
 ## Recursos.
 1. Apuntes del Bloque 3 Introducción a la limpieza y análisis de los datos de la asignatura de _Tipología y ciclo de vida de los datos_.
 2. Apuntes de la asignatura minería de datos.
+3. Apuntes de la asignatura estadística avanzada.
