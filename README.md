@@ -15,7 +15,9 @@ La práctica se ha realizado en pareja por **Sandra Campos Suárez** y **María 
 ## Respuestas
 
 * **PRA_2.pdf**: documento con las respuestas de la práctica en formato pdf.
-* **PRA_2.pdf**: documento con las respuestas de la práctica en formato html.
+* **PRA_2.html**: documento con las respuestas de la práctica en formato html.
+
+**NOTA**: La gráfica de la normalidad en la página 13 no sale correctamente, por eso también se ha subido en formato html.
 
 ## Dataset
 
