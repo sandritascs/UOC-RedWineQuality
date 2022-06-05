@@ -14,7 +14,8 @@ La práctica se ha realizado en pareja por **Sandra Campos Suárez** y **María 
 
 ## Respuestas
 
-* **PRA_2.pdf**: documento con las respuestas de la práctica.
+* **PRA_2.pdf**: documento con las respuestas de la práctica en formato pdf.
+* **PRA_2.pdf**: documento con las respuestas de la práctica en formato html.
 
 ## Dataset
 
