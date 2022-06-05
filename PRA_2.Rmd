@@ -255,7 +255,7 @@ t.test(wine_df.altoSulphates, wine_df$quality, alternative = "less")
 ```
 En este caso, rechazamos la hipótesis nula ya que el p-valor (2.2e-16) es menor que el nivel de significación (0.05), por tanto, la variable sulphates es significativa, es decir, influye en la calidad de un vino.
 
-##### *No influyen: residual.sugar. Las variables que son significativas son: alcohol, citric.acid, fixed.acidity, volatile.acidity, citric.acid, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH y sulphates*
+##### *No influyen: residual.sugar. Las variables que son significativas son: alcohol, citric.acid, fixed.acidity, volatile.acidity, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH y sulphates*
 
 ##### **4.2. Comprobación de la normalidad y homogeneidad de la varianza.**
 
@@ -325,6 +325,7 @@ plot(quality~alcohol, data=wine_df2)
 plot(quality~density, data=wine_df2)
 plot(quality~citric.acid, data=wine_df2)
 ```
+
 Las tendencias que se observan en los gráficos resultantes concuerdan con la interpretación que hemos
 efectuado con los modelos anteriores de la relación de las variables regresoras con la calidad. La variable calidad aumenta con el alcohol y ácido cítrico (primer y tercer gráfico) y decrece con la densidad (segundo gráfico)
 
@@ -334,7 +335,7 @@ Model_quality_multiple <- lm(quality~alcohol+citric.acid+fixed.acidity+chlorides
 summary(Model_quality_multiple)
 
 ```
-Las variables fixed.acidity y density no son significativas. El modelo de regresión es significativo (p-value: < 2.2e-16), con un R2 ajustado de 32.05 %. Las variables alcohol, citric.acid, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente.
+Las variables fixed.acidity y density no son significativas. El modelo de regresión es significativo (p-value: < 2.2e-16), con un R2 ajustado de 32,7 %. Las variables alcohol, citric.acid, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente.
 
 ```{r}
 # Modelo Regresión Logística
@@ -376,7 +377,7 @@ Se han ido generando los gráficos a lo largo de la práctica
 
 # **6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?**
 
-Tras el modelo de regresión lineal múltiple así como el análsis de correlación y contrastes de hipótesis determinamos que las variables que influyen en la calidad del vino son el alcohol, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, pH y sulphates. El modelo de regresión, siendo un modelo significativo (p-value: < 2.2e-16), con un R2 ajustado de 32.05 %, indica que las variables alcohol, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente. Esto también lo hemos comprobado a través del modelo logístico.
+Tras el modelo de regresión lineal múltiple así como el análsis de correlación y contrastes de hipótesis determinamos que las variables que influyen en la calidad del vino son el alcohol, citric.acid,chlorides, free.sulfur.dioxide, total.sulfur.dioxide, pH y sulphates. El modelo de regresión, siendo un modelo significativo (p-value: < 2.2e-16), con un R2 ajustado de 32.7 %, indica que las variables alcohol, citric.acid, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente. Esto también lo hemos comprobado a través del modelo logístico.
 
 ## **Contribuciones**
 
