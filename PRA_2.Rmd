@@ -1,0 +1,378 @@
+---
+title: 'Práctica 2: Red Wine Quality'
+author: 'Autoras: Sandra Campos Suárez y Mª de los Ángeles García Carrión'
+output:
+  html_document:
+    df_print: paged
+  pdf_document: default
+  word_document: default
+---
+```{r setup, include=FALSE}
+if (!require('ggplot2')) install.packages('ggplot2')
+library(ggplot2)
+if (!require('corrgram')) install.packages('corrgram')
+library(corrgram)
+```
+
+# **1. Descripción del dataset. ¿Por qué es importante y qué pregunta/problema pretende responder?**
+
+El objetivo general de este estudio es conocer qué variables influyen en la calidad de un vino, es decir, de qué forma influye el pH, ácido cítrico y densidad, entre otros, para que un vino tenga Alta o Baja calidad. Para ello, estudiaremos y analizaremos la relación entre las variables mediante análisis de correlación, regresión lineal y múltiple, etc.
+
+Las variables de nuestro conjunto de datos son: **acidez fija**, **acidez volátil**, **ácido cítrico**, **azúcar residual**, **cloruros**, **anhídrido sulfuroso libre**, **anhídrido sulfuroso total**, **densidad**, **pHv, s**ulfatos** y **alcohol**. La variable de salidad que está basada en los datos anteriores es la **calidad** (puntuación entre 0 y 10).
+
+
+# **2 . Integración y selección de los datos de interés a analizar. Puede ser el resultado de adicionar diferentes datasets o una subselección útil de los datos originales, en base al objetivo que se quiera conseguir.**
+
+En primer lugar, leemos el fichero de datos
+
+```{r}
+# Conexión a la fuente de datos
+wine <- read.csv('csv/winequality-red.csv',stringsAsFactors = FALSE)
+```
+
+A través de la siguiente función observamos que nuestro dataset está compuesto por 1599 registros y 12 columnas
+
+```{r}
+# Dimensiones del dataset
+dim(wine)
+```
+
+A continuación se muestra el detalle de las variables y por el momento vamos a utilizar todas las variables. En los apartados siguientes analizaremos la correlación entre las variables y donde concluiremos si eliminamos alguna variable o mantenemos la selección actual.
+
+
+```{r}
+# Detalle del dataset. Todas las variables son numéricas excepto la variable quality siendo un integer. 
+str(wine)
+```
+
+# **3. Limpieza de los datos.**
+
+##### **3.1. ¿Los datos contienen ceros o elementos vacíos? Gestiona cada uno de estos casos.**
+
+Tal y como se ha indicado en el apartado anterior, no tenemos presencia de valores nulos en las variables.Otra forma de conocer si existe valores nulos a lo largo de la tabla es mediante la siguiente función, donde observamos que hay 0 valores nulos.
+
+```{r}
+colSums(is.na(wine))
+```
+
+##### **3.2. Identifica y gestiona los valores extremos.**
+
+```{r}
+# Resumen de las variables
+summary(wine)
+```
+
+La Comunidad Europea establece en el Reglamento (CE) nº 643/2006 de la Comisión, de 27 de abril de 2006 los máximos admitidos en el vino (https://www.boe.es/doue/2006/115/L00006-00009.pdf). Por ende, el citric.acid (1 g/l), sulphates (2 g/l) y chlorides (<1 g/l) están dentro de la normativa así que no consideramos presencia de oultiers al igual que en la calidad, el alcohol (<15 grados), pH (entre 3-4), density (<1 g/l) y residual.sugar (<18), fixed.acidity.
+
+Sin embargo, tendremos que tratar las siguientes variables que no están dentro de la normativa como total.sulfur.dioxide (<150 mg), volatile.acidity (<1.2 g/l), chlorides (<0.5g/l) así que esta variable tendremos que tratar sus outliers. Excluiremos estos registros del análisis ya que no cumple la normativa vinos con estos valores. Dejaremos los outliers que están por debajo del valor de la normativa, ya que si son valores válidos.
+
+
+```{r}
+# Boxplot de las variables que superan el máximo de la Normativa (CE)
+par(mfrow = c(1, 3))
+boxplot(wine$total.sulfur.dioxide, main = "total.sulfur.dioxide", col="skyblue1")
+boxplot(wine$volatile.acidity, main = "volatile.acidity", col="skyblue1")
+boxplot(wine$chlorides, main = "chlorides", col="skyblue1")
+
+```
+
+```{r}
+# Total outliers
+sum(boxplot.stats(wine$total.sulfur.dioxide)$out>150)
+sum(boxplot.stats(wine$volatile.acidity)$out>1.2)
+sum(boxplot.stats(wine$chlorides)$out>0.5)
+```
+
+
+```{r}
+# Filtramos el dataset excluyendo los outliers ya que no cumplen la normativa
+wine_df<- subset(wine, total.sulfur.dioxide <= 150 & chlorides <=0.5 & volatile.acidity <=1.2)
+
+# Comprobamos que no existen outliers que no cumplan la normativa
+sum(boxplot.stats(wine_df$total.sulfur.dioxide)$out>150)
+sum(boxplot.stats(wine_df$volatile.acidity)$out>1.2)
+sum(boxplot.stats(wine_df$chlorides)$out>0.5)
+```
+
+# **4. Análisis de los datos.**
+##### **4.1. Selección de los grupos de datos que se quieren analizar/comparar (p. e., si se van a comparar grupos de datos, ¿cuáles son estos grupos y qué tipo de análisis se van a aplicar?)**
+
+##### *Variable dependiente: Quality*
+
+Antes de continuar con el análisis estudiamos la distribución de la calidad con el fin de saber si disponemos información sobre los vinos de baja, media o elevada calidad. Para ello, utilizamos el histográma donde efectivamente tenemos vinos con calidad inferior a 5, de 5 y superior a 6 .
+
+```{r}
+# Histograma variable calidad del vino
+hist(wine_df$quality, main = "Histograma calidad", ylab = "count", xlab = "Quality", col="skyblue1")
+```
+
+```{r}
+# Convertimos la variable quality en categorica
+breakPoints <- c(0, 4, 6, Inf)
+categories <- c("Low", "Medium", "High")
+wine_df$quality_group <- cut(wine_df$quality, breaks = breakPoints, labels = categories)
+
+# Tabla datos
+table(wine_df$quality, wine_df$quality_group)
+
+```
+##### *Variables independientes*
+
+Vamos a visualizar todas las variables independientes en función de la calidad.
+```{r}
+# Boxplot de todas las variables por grupo de calidad
+par(mfrow = c(3, 4))
+for(i in 1:11) {
+  boxplot(wine_df[, i] ~ wine_df[, 13],
+        col = c("#FFA07A", "#B0E2FF", "#98fb98"),
+        boxwex = 0.5)
+  nombre.de.variable <- names(wine_df)[i]
+  title(main = nombre.de.variable)
+}
+```
+
+A priori, todas las variables excepto residual.sugar y pH presentan relación tanto positiva como negativa con la calidad del vino. Sin embargo, nos vamos a apoyar en los análisis de correlaciones, contraste de hipótesis y regresión múltiple. 
+
+##### *Relación entre la calidad y sus variables independientes*
+
+```{r}
+# Conocer si existe relación entre el alcohol y la calidad del vino
+high_alcohol<-quantile(wine_df$alcohol, probs =0.75)
+wine_high_alcohol<-wine_df[wine_df$alcohol>=high_alcohol,]$quality
+wine_low_alcohol<-wine_df[wine_df$alcohol<high_alcohol,]$quality
+t.test(wine_high_alcohol, wine_df$quality, alternative = "greater")
+t.test(wine_high_alcohol, wine_df$quality, alternative = "less")
+```
+
+Rechazamos hipótesis nula ya que el p-valor es menor que el nivel de significación, por tanto, la variable alcohol es significativa, es decir, cuanto más alcohol la calidad será mayor.
+
+```{r}
+# Conocer si existe relación entre el azúcar y la calidad del vino
+high_sugar<-quantile(wine_df$residual.sugar, probs =0.75)
+wine_high_sugar<-wine_df[wine_df$residual.sugar>=high_sugar,]$quality
+wine_low_sugar<-wine_df[wine_df$residual.sugar<high_sugar,]$quality
+t.test(wine_high_sugar, wine_df$quality, alternative = "greater")
+t.test(wine_high_sugar, wine_df$quality, alternative = "less")
+```
+
+En este caso, aceptamos la hipótesis nula ya que el p-valor (0.5298) es mayor que el nivel de significación (0.05), por tanto, la variable azúcar no es significativa, es decir, no influye la cantidad de azúcar en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre fixed.acidity y la calidad del vino
+high_fixed.acidity<-quantile(wine_df$fixed.acidity, probs = 0.75)
+wine_high_fixed.acidity<-wine_df[wine_df$fixed.acidity>=high_fixed.acidity,]$quality
+wine_low_fixed.acidity<-wine_df[wine_df$fixed.acidity<high_fixed.acidity,]$quality
+t.test(wine_high_fixed.acidity, wine_df$quality, alternative = "greater")
+t.test(wine_high_fixed.acidity, wine_df$quality, alternative = "less")
+```
+
+En este caso, rechazamos la hipótesis nula ya que el p-valor (3.279e-05) es menor que el nivel de significación (0.05), por tanto, la variable fixed.acidity es significativa, es decir, influye en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre volatile.acidity y la calidad del vino
+high_volatile.acidity<-quantile(wine_df$volatile.acidity, probs =0.75)
+wine_df.high_Volatile.acidity<-wine_df[wine_df$volatile.acidity>=high_volatile.acidity,]$quality
+wine_df.low_Volatile.acidity<-wine_df[wine_df$volatile.acidity<high_volatile.acidity,]$quality
+t.test(wine_df.high_Volatile.acidity, wine_df$quality, alternative = "less")
+t.test(wine_df.high_Volatile.acidity, wine_df$quality, alternative = "greater")
+```
+
+En este caso, rechazamos la hipótesis nula ya que el p-valor (4.916e-16) es menor que el nivel de significación (0.05), por tanto, la variable volatile.acidity es significativa, es decir, influye en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre citric.acid y la calidad del vino
+high_citric.acid<-quantile(wine_df$citric.acid, probs = 0.75)
+wine_high_citric.acid<-wine_df[wine_df$citric.acid>=high_volatile.acidity,]$quality
+wine_low_citric.acid<-wine_df[wine_df$citric.acid<high_volatile.acidity,]$quality
+t.test(wine_high_citric.acid, wine_df$quality, alternative = "greater")
+t.test(wine_high_citric.acid, wine_df$quality, alternative = "less")
+```
+
+En este caso, rechazamos la hipótesis nula ya que el p-valor (0.0007565) es menor que el nivel de significación (0.05), por tanto, la variable citric.acid es significativa, es decir, influye en la calidad de un vino.
+
+```{r}
+# Conocer si existe relación entre chlorides y la calidad del vino
+high_chlorides<-quantile(wine_df$chlorides, probs =0.75)
+wine_df.high_Chlorides<-wine_df[wine_df$chlorides>=high_chlorides,]$quality
+wine_df.low_Chlorides<-wine_df[wine_df$chlorides<high_chlorides,]$quality
+t.test(wine_df.high_Chlorides, wine_df$quality, alternative = "less")
+t.test(wine_df.high_Chlorides, wine_df$quality, alternative = "greater")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (0.003155) es menor que el nivel de significación (0.05), por tanto, la variable chlorides es significativa, es decir, influye en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre free.sulfur.dioxide y la calidad del vino
+high_free.sulfur.dioxide<-quantile(wine_df$free.sulfur.dioxide, probs =0.75)
+wine_df.high_free.sulfur.dioxide<-wine_df[wine_df$free.sulfur.dioxide>=high_free.sulfur.dioxide,]$quality
+wine_df.low_free.sulfur.dioxide<-wine_df[wine_df$free.sulfur.dioxide<high_free.sulfur.dioxide,]$quality
+t.test(wine_df.high_free.sulfur.dioxide, wine_df$quality, alternative = "less")
+t.test(wine_df.high_free.sulfur.dioxide, wine_df$quality, alternative = "greater")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (0.05062) es menor que el nivel de significación (0.05), por tanto, la variable free.sulfur.dioxide es significativa, es decir, influye en la calidad de un vino.
+
+```{r}
+# Conocer si existe relación entre total.sulfur.dioxide y la calidad del vino
+high_total.sulfur.dioxide<-quantile(wine_df$total.sulfur.dioxide, probs =0.75)
+wine_df.high_total.sulfur.dioxide<-wine_df[wine_df$total.sulfur.dioxide>=high_total.sulfur.dioxide,]$quality
+wine_df.low_total.sulfur.dioxide<-wine_df[wine_df$total.sulfur.dioxide<high_total.sulfur.dioxide,]$quality
+t.test(wine_df.high_total.sulfur.dioxide, wine_df$quality, alternative = "less")
+t.test(wine_df.high_total.sulfur.dioxide, wine_df$quality, alternative = "greater")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (7.572e-12) es menor que el nivel de significación (0.05), por tanto, la variable total.sulfur.dioxide es significativa, es decir, influye en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre density y la calidad del vino
+high_density<-quantile(wine_df$density, probs =0.75)
+wine_df.high_density<-wine_df[wine_df$density>=high_density,]$quality
+wine_df.low_density<-wine_df[wine_df$density<high_density,]$quality
+t.test(wine_df.high_density, wine_df$quality, alternative = "less")
+t.test(wine_df.high_density, wine_df$quality, alternative = "greater")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (0.0268) es menor que el nivel de significación (0.05), por tanto, la variable density es significativa, es decir, influye en la calidad de un vino.
+
+
+```{r}
+# Conocer si existe relación entre pH y la calidad del vino
+high_pH<-quantile(wine_df$pH, probs =0.75)
+wine_df.high_pH<-wine_df[wine_df$pH>=high_pH,]$quality
+wine_df.low_pH<-wine_df[wine_df$pH<high_pH,]$quality
+t.test(wine_df.high_pH, wine_df$quality, alternative = "less")
+t.test(wine_df.high_pH, wine_df$quality, alternative = "greater")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (0.1241) es menor que el nivel de significación (0.05), por tanto, la variable pH es significativa, es decir, influye en la calidad de un vino.
+```{r}
+# Conocer si existe relación entre sulphates y la calidad del vino
+high_sulphates<-quantile(wine_df$sulphates, probs =0.75)
+wine_df.altoSulphates<-wine_df[wine_df$sulphates>=high_sulphates,]$quality
+wine_df.bajoSulphates<-wine_df[wine_df$sulphates<high_sulphates,]$quality
+t.test(wine_df.altoSulphates, wine_df$quality, alternative = "greater")
+t.test(wine_df.altoSulphates, wine_df$quality, alternative = "less")
+```
+En este caso, rechazamos la hipótesis nula ya que el p-valor (2.2e-16) es menor que el nivel de significación (0.05), por tanto, la variable sulphates es significativa, es decir, influye en la calidad de un vino.
+
+##### *No influyen: residual.sugar. Las variables que son significativas son: alcohol, citric.acid, fixed.acidity, volatile.acidity, citric.acid, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, density, pH y sulphates*
+
+##### **4.2. Comprobación de la normalidad y homogeneidad de la varianza.**
+
+```{r}
+# Comprobación de la normalidad de la variable quality
+plot(density(wine_df$quality),main="Density")
+qqnorm(wine_df$quality)
+```
+El ‘density plot’ muestra una distribución asimétrica. El ‘qqplot’ nos indica una distribución que no es normal de la variable Weight. Por tanto, los gráficos parecen indicar que la variable Weight sigue una distribución normal.
+
+```{r}
+#Contaste de normalidad. Test de Shapiro-Wilk
+shapiro.test (wine_df$quality)
+```
+Con un p-value (<2.2e-16) menor de 0.05 no podemos rechazar la hipótesis nula. Esto indica que la variable quality no cumple el supuesto de normalidad.
+
+```{r}
+# Comprobación de la normalidad para el resto de variables
+library('nortest')
+alpha = 0.05
+wine_nor <- wine_df[, c(1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11)]
+col.names = colnames(wine_nor)
+for (i in 1:ncol(wine_nor)) {
+  if (i==1) cat("Las variables que no siguen una distribución normal:\n")
+  if (is.integer(wine_nor[,i]) | is.numeric(wine_nor[,i])) {
+      p_val = ad.test(wine_nor[,i])$p.value
+        if (p_val < alpha) {
+            cat(col.names[i])
+                  # Format output
+            if (i < ncol(wine_nor)) cat(", ")
+        }
+      } 
+  }
+```
+
+##### **4.3. Aplicación de pruebas estadísticas para comparar los grupos de datos. En función de los datos y el objetivo del estudio, aplicar pruebas de contraste de hipótesis, correlaciones, regresiones, etc. Aplicar al menos tres métodos de análisis diferentes.**
+
+
+```{r}
+# correlación entre las variables sin las variables no significativas
+library(corrplot)
+wine_df2 <- wine_df[, c(1, 2, 3, 5, 6, 7, 8, 9, 10, 11, 12)]
+
+corrgram (wine_df2, order = TRUE , lower.panel=panel.conf)
+
+```
+
+```{r}
+# Modelo de regresión lineal quality-alcohol
+Model_quality_alcohol <- lm(quality~alcohol, data=wine_df2 )
+summary(Model_quality_alcohol)
+
+# Modelo de regresión lineal quality-density
+Model_quality_density <- lm(quality~density, data=wine_df2 )
+summary(Model_quality_density)
+
+# Modelo de regresión lineal quality-citric.acid
+Model_citric_acid <- lm(quality~citric.acid, data=wine_df2 )
+summary(Model_citric_acid)
+```
+El p-valor es menor al nivel de confianza en los tres modelos. La variable alcohol y ácido cítrico tienen un efecto positivo incremental mientras que la densidad afecta negativamente. Otra diferencia entre los modelos es que el modelo basado en el alcohol y ácido cítrico ajusta mejor que el modelo densidad ya que el R2 es mayor.
+
+```{r}
+par(mfrow=c(1,3))
+plot(quality~alcohol, data=wine_df2)
+plot(quality~density, data=wine_df2)
+plot(quality~citric.acid, data=wine_df2)
+```
+Las tendencias que se observan en los gráficos resultantes concuerdan con la interpretación que hemos
+efectuado con los modelos anteriores de la relación de las variables regresoras con la calidad. La variable calidad aumenta con el alcohol y ácido cítrico (primer y tercer gráfico) y decrece con la densidad (segundo gráfico)
+
+```{r}
+# Modelo Regresión Multiple
+Model_quality_multiple <- lm(quality~alcohol+citric.acid+fixed.acidity+chlorides+free.sulfur.dioxide+total.sulfur.dioxide+density+pH+sulphates, data=wine_df2)
+summary(Model_quality_multiple)
+
+```
+Las variables fixed.acidity y density no son significativas. El modelo de regresión es significativo (p-value: < 2.2e-16), con un R2 ajustado de 32.05 %. Las variables alcohol, citric.acid, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente.
+
+```{r}
+# Modelo Regresión Logística
+high_wine <-ifelse(test=wine_df2$quality>=7,yes=1,no=0)
+wine_df2$high_wine=high_wine
+quality<- wine_df2$quality
+
+logit_model_quality <- glm(formula=high_wine~alcohol+citric.acid+fixed.acidity+chlorides+free.sulfur.dioxide+total.sulfur.dioxide+density+pH+sulphates, data=wine_df2,  family=binomial(logit))
+summary(logit_model_quality)
+```
+
+```{r}
+exp(cbind(coef(logit_model_quality),confint(logit_model_quality)))
+```
+Se observa que:
+- Un incremento de una unidad en alcohol (ajustando por las otras regresoras) aumenta el odds de
+calidad en 2.366251e+00.
+- Un incremento de una unidad en citric.acid (ajustando por las otras regresoras) aumenta el odds de
+calidad en 8.524033e+00.
+- Un incremento de una unidad en fixed.acidity (ajustando por las otras regresoras) aumenta el odds de
+calidad en 1.127996e+00.
+- Un incremento de una unidad en chlorides (ajustando por las otras regresoras) reduce el odds de
+calidad en 1.662790e-05.
+- Un incremento de una unidad en free.sulfur.dioxide (ajustando por las otras regresoras) aumenta el odds de
+calidad en 1.030605e+00.
+- Un incremento de una unidad en total.sulfur.dioxide (ajustando por las otras regresoras) reduce el odds de
+calidad en 9.708302e-01.
+- Un incremento de una unidad en density (ajustando por las otras regresoras) reduce el odds de
+calidad en 3.165256e-61.
+- Un incremento de una unidad en pH (ajustando por las otras regresoras) reduce el odds de
+calidad en 7.607642e-01.
+- Un incremento de una unidad en sulphates (ajustando por las otras regresoras) aumenta el odds de
+calidad en 6.928366e+01.
+
+
+# **5. Representación de los resultados a partir de tablas y gráficas. Este apartado se puede responder a lo largo de la práctica, sin necesidad de concentrar todas las representaciones en este punto de la práctica.**
+
+Se han ido generando los gráficos a lo largo de la práctica
+
+# **6. Resolución del problema. A partir de los resultados obtenidos, ¿cuáles son las conclusiones? ¿Los resultados permiten responder al problema?**
+
+Tras el modelo de regresión lineal múltiple así como el análsis de correlación y contrastes de hipótesis determinamos que las variables que influyen en la calidad del vino son el alcohol, chlorides, free.sulfur.dioxide, total.sulfur.dioxide, pH y sulphates. El modelo de regresión, siendo un modelo significativo (p-value: < 2.2e-16), con un R2 ajustado de 32.05 %, indica que las variables alcohol, fixed.acidity, free.sulfur.dioxide y sulphates influyen de forma positiva mientras que el resto de variables negativamente. Esto también lo hemos comprobado a través del modelo logístico
