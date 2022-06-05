@@ -18,7 +18,7 @@ library(corrgram)
 
 El objetivo general de este estudio es conocer qué variables influyen en la calidad de un vino, es decir, de qué forma influye el pH, ácido cítrico y densidad, entre otros, para que un vino tenga Alta o Baja calidad. Para ello, estudiaremos y analizaremos la relación entre las variables mediante análisis de correlación, regresión lineal y múltiple, etc.
 
-Las variables de nuestro conjunto de datos son: **acidez fija**, **acidez volátil**, **ácido cítrico**, **azúcar residual**, **cloruros**, **anhídrido sulfuroso libre**, **anhídrido sulfuroso total**, **densidad**, **pHv, s**ulfatos** y **alcohol**. La variable de salidad que está basada en los datos anteriores es la **calidad** (puntuación entre 0 y 10).
+Las variables de nuestro conjunto de datos son: **acidez fija**, **acidez volátil**, **ácido cítrico**, **azúcar residual**, **cloruros**, **anhídrido sulfuroso libre**, **anhídrido sulfuroso total**, **densidad**, **pHv**, **sulfatos** y **alcohol**. La variable de salidad que está basada en los datos anteriores es la **calidad** (puntuación entre 0 y 10).
 
 
 # **2 . Integración y selección de los datos de interés a analizar. Puede ser el resultado de adicionar diferentes datasets o una subselección útil de los datos originales, en base al objetivo que se quiera conseguir.**
@@ -264,6 +264,7 @@ En este caso, rechazamos la hipótesis nula ya que el p-valor (2.2e-16) es menor
 plot(density(wine_df$quality),main="Density")
 qqnorm(wine_df$quality)
 ```
+
 El ‘density plot’ muestra una distribución asimétrica. El ‘qqplot’ nos indica una distribución que no es normal de la variable Weight. Por tanto, los gráficos parecen indicar que la variable Weight sigue una distribución normal.
 
 ```{r}
