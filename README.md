@@ -26,6 +26,9 @@ El dataset se encuentra en **csv/winequality-red.csv**.
 ## Vídeo
 
 En el siguiente enlace se encuentra el vídeo de explicación de la práctica:
+https://drive.google.com/file/d/1j7wX7Jit7XwC4eQEgztnc1qHxUtFC5vF/view?usp=sharing
+o
+https://drive.google.com/file/d/1TpcVzOKOdd5gFxxWLonVgPZwpjDOtsXl/view?usp=sharing
 
 ## Recursos.
 1. Apuntes del Bloque 3 Introducción a la limpieza y análisis de los datos de la asignatura de _Tipología y ciclo de vida de los datos_.
